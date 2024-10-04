@@ -3,7 +3,7 @@ use serde_json;
 use std::fs::*;
 use std::io::Write;
 
-static BLOCKCHAIN_FILE: &str = "./files/blockchain.json";
+static BLOCKCHAIN_FILE: &str = "./files/chain.json";
 
 // Saving the Current State of the Blockchain
 pub fn save_blockchain_data(blockchain: &Vec<Block>) {

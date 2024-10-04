@@ -1,10 +1,11 @@
 use crate::helpers;
+use crate::storage;
 use serde::{Deserialize, Serialize};
 use sha256::digest;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[allow(dead_code)]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Block {
     pub hash: String,
     pub previous_hash: String,
@@ -23,8 +24,10 @@ impl Block {
     ) -> Block {
         let block_number: u64 = previous_number.clone() + 1;
 
+        // Generating the tx_root of block's transactions
         let tx_root = helpers::gen_tx_root(&transactions);
 
+        // Digest to create the Hash of current Block
         let dig: String = format!(
             "{}{}{}{}",
             previous_hash.clone(),
@@ -33,15 +36,14 @@ impl Block {
             tx_root
         );
 
+        // Calculating the Hash of the Block
         let hash = sha256::digest(&dig);
-
-        let number = previous_number + 1;
 
         let tmp_block = Block {
             hash,
             previous_hash,
             nonce,
-            number,
+            number: block_number,
             tx_root,
             transactions,
         };
@@ -82,10 +84,88 @@ impl Transaction {
         return tx;
     }
 
+    // Helper to print and encode tx
     pub fn to_string(&self) -> String {
         return format!(
             "from:{},to:{},amount:{},hash:{},timestamp:{}",
             self.from_address, self.to_address, self.amount, self.hash, self.timestamp
         );
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TXPool {
+    transactions: Vec<Transaction>,
+}
+
+impl TXPool {
+    pub fn new() -> TXPool {
+        return TXPool {
+            transactions: Vec::<Transaction>::new(),
+        };
+    }
+
+    pub fn add_new(&mut self, tx: Transaction) {
+        self.transactions.push(tx);
+    }
+
+    pub fn process_txs(&mut self) -> Vec<Transaction> {
+        let tmp_txs: Vec<Transaction> = self.transactions.clone();
+        self.transactions.clear();
+
+        return tmp_txs;
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Blockchain {
+    pub blocks: Vec<Block>,
+    pub tx_pool: TXPool,
+}
+
+impl Blockchain {
+    pub fn new() -> Blockchain {
+        let mut blocks: Vec<Block> = storage::get_blockchain_data();
+
+        // Genesis Block generation and insertion
+        if blocks.len() == 0 {
+            let transactions: Vec<Transaction> = Vec::new();
+            let tx_root = helpers::gen_tx_root(&transactions);
+
+            let genesis_block: Block = Block {
+                hash: "0".repeat(64).to_string(),
+                previous_hash: "null".to_string(),
+                number: 0,
+                nonce: 0,
+                tx_root,
+                transactions,
+            };
+
+            // Adding the Genesis Block to the Ledger
+            blocks.push(genesis_block);
+
+            // Save current blockchain's state
+            storage::save_blockchain_data(&blocks);
+        }
+
+        return Blockchain {
+            blocks,
+            tx_pool: TXPool::new(),
+        };
+    }
+
+    pub fn insert_block(&mut self, block: Block) {
+        self.blocks.push(block);
+        storage::save_blockchain_data(&self.blocks);
+    }
+
+    pub fn get_last_block(&self) -> &Block {
+        return self.blocks.last().unwrap();
+    }
+
+    pub fn get_current_txs(&mut self) -> Vec<Transaction> {
+        return self.tx_pool.process_txs();
     }
 }
