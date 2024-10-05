@@ -4,40 +4,31 @@
 
 use bet_chain::helpers;
 use bet_chain::miner;
-use bet_chain::models::{Block, Blockchain};
-use bet_chain::rpc;
-use std::sync::mpsc;
+use bet_chain::models::{Block, Blockchain, TXPool};
 use std::{thread, time};
 
 #[tokio::main]
 async fn main() {
-    let (main_tx, main_rx) = mpsc::channel();
-
     // Initializing the Blockchain
     let mut blockchain: Blockchain = helpers::init_blockchain();
 
+    // Pool containing all TXs
+    let mut txpool: TXPool = TXPool::new();
+
+    // Spawning the TX Pool worker
     thread::spawn(move || {
-        rpc::start(main_tx);
+        txpool.start();
     });
 
     // Running Forever
     loop {
-        let tx_watcher = main_rx.try_recv();
-
-        match tx_watcher {
-            Ok(tx) => {
-                blockchain.tx_pool.add_new(tx.unwrap());
-            }
-            _ => {}
-        }
-
         // TMP impl
         let tmp_blockchain = blockchain.clone();
         let last_block: &Block = tmp_blockchain.get_last_block();
         // // // // // //
 
         // Creating a new block with the lastest block information
-        let new_block = miner::create_new_block(last_block, blockchain.get_current_txs());
+        let new_block = miner::create_new_block(last_block);
 
         // Logging current block
         println!(

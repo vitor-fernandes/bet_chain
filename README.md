@@ -9,5 +9,5 @@ A simple app developed to fix some concepts about Rust and Blockchains
 3. Persistence ✅
 3. Transaction Implementation ✅
 4. TXPool ✅
-5. RPC
+5. RPC ✅
 6. I don't know :)

@@ -1,6 +1,12 @@
-use crate::models::{Block, Transaction};
+use crate::{
+    models::{Block, Transaction},
+    storage,
+};
 
-pub fn create_new_block(previous_block: &Block, txs: Vec<Transaction>) -> Block {
+pub fn create_new_block(previous_block: &Block) -> Block {
+    // Load the TXs in TX Pool
+    let txs: Vec<Transaction> = storage::get_txpool_data();
+
     // Creates a new Block with the Nonce 0
     let mut nonce: u64 = 0;
     let mut block: Block = Block::new(
@@ -21,10 +27,7 @@ pub fn create_new_block(previous_block: &Block, txs: Vec<Transaction>) -> Block 
         );
     }
 
-    return block;
-}
+    storage::save_txpool_data(&Vec::<Transaction>::new());
 
-pub fn create_new_tx(from: String, to: String, amount: u64) -> Transaction {
-    let tx = Transaction::new(from, to, amount);
-    return tx;
+    return block;
 }

@@ -1,7 +1,10 @@
 use crate::helpers;
+use crate::rpc;
 use crate::storage;
 use serde::{Deserialize, Serialize};
 use sha256::digest;
+use std::sync::mpsc;
+use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[allow(dead_code)]
@@ -95,34 +98,8 @@ impl Transaction {
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct TXPool {
-    transactions: Vec<Transaction>,
-}
-
-impl TXPool {
-    pub fn new() -> TXPool {
-        return TXPool {
-            transactions: Vec::<Transaction>::new(),
-        };
-    }
-
-    pub fn add_new(&mut self, tx: Transaction) {
-        self.transactions.push(tx);
-    }
-
-    pub fn process_txs(&mut self) -> Vec<Transaction> {
-        let tmp_txs: Vec<Transaction> = self.transactions.clone();
-        self.transactions.clear();
-
-        return tmp_txs;
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Blockchain {
-    pub blocks: Vec<Block>,
-    pub tx_pool: TXPool,
+    blocks: Vec<Block>,
 }
 
 impl Blockchain {
@@ -150,10 +127,7 @@ impl Blockchain {
             storage::save_blockchain_data(&blocks);
         }
 
-        return Blockchain {
-            blocks,
-            tx_pool: TXPool::new(),
-        };
+        return Blockchain { blocks };
     }
 
     pub fn insert_block(&mut self, block: Block) {
@@ -164,8 +138,42 @@ impl Blockchain {
     pub fn get_last_block(&self) -> &Block {
         return self.blocks.last().unwrap();
     }
+}
 
-    pub fn get_current_txs(&mut self) -> Vec<Transaction> {
-        return self.tx_pool.process_txs();
+#[allow(dead_code)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TXPool {
+    transactions: Vec<Transaction>,
+}
+
+impl TXPool {
+    pub fn new() -> TXPool {
+        return TXPool {
+            transactions: Vec::<Transaction>::new(),
+        };
+    }
+
+    pub fn start(&mut self) {
+        let (txpool_tx, txpool_rx) = mpsc::channel();
+
+        thread::spawn(move || {
+            rpc::start(txpool_tx);
+        });
+
+        loop {
+            let tx_watcher = txpool_rx.try_recv();
+
+            match tx_watcher {
+                Ok(tx) => {
+                    self.insert_tx_into_pool(tx.unwrap());
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn insert_tx_into_pool(&mut self, tx: Transaction) {
+        self.transactions.push(tx);
+        storage::save_txpool_data(&self.transactions);
     }
 }
