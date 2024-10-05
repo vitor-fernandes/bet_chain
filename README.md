@@ -33,9 +33,16 @@ So, you need to send in this format to execute the RPC methods.
 ### RPC
 
 The RPC listen on the 6565 port and have only one method so far:
-1. send_tx -> Which will send a simple tx (really?!) from one account to another one
+1. send_tx -> Send a simple tx from one account to another one
 ```
 Example: send_tx|from:user1,to:user2,amount:100
 
 echo 'send_tx|from:user1,to:user2,amount:100' | ncat localhost 6565
+```
+
+2. get_block_by_number -> Returns all information about a block by it's number
+```
+Example: get_block_by_number|23
+
+echo 'get_block_by_number|23' | ncat localhost 6565
 ```

@@ -44,7 +44,25 @@ pub fn get_blockchain_data() -> Vec<Block> {
         }
     }
 
+    blocks.sort_by_key(|block| block.number);
+
     return blocks;
+}
+
+pub fn get_block_by_number(number: &str) -> Option<Block> {
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open("./files/betchain", opt).unwrap();
+
+    let block = db.get(number.as_bytes());
+
+    match block {
+        Some(data) => {
+            let tmp_block: Block = serde_json::from_slice(data.as_slice()).unwrap();
+            return Some(tmp_block);
+        }
+        None => None,
+    }
 }
 
 pub fn save_txpool_data(tx: &Vec<Transaction>) {

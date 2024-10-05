@@ -1,10 +1,9 @@
+use crate::{models::Transaction, storage};
 use std::{char, sync::mpsc};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
 };
-
-use crate::models::Transaction;
 
 #[tokio::main]
 pub async fn start(main_tx: mpsc::Sender<Option<Transaction>>) {
@@ -60,6 +59,12 @@ async fn process_incomming_request(mut stream: TcpStream) -> Option<Transaction>
 
     let result = match method.unwrap() {
         "send_tx" => send_new_tx(data.unwrap()),
+        "get_block_by_number" => {
+            let response = query_block_data(data.unwrap());
+            stream.try_write(response.as_bytes()).unwrap();
+            stream.shutdown().await.unwrap();
+            return None;
+        }
         _ => {
             stream.try_write(b"Method not Found!").unwrap();
             stream.shutdown().await.unwrap();
@@ -122,4 +127,14 @@ fn send_new_tx(data: &str) -> Option<Transaction> {
     }
 
     return None;
+}
+
+fn query_block_data(data: &str) -> String {
+    let block = storage::get_block_by_number(data);
+    match block {
+        Some(data) => {
+            return serde_json::to_string(&data).unwrap();
+        }
+        None => return String::from("Block Not Found"),
+    }
 }

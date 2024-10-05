@@ -168,9 +168,10 @@ impl TXPool {
             let tx_watcher = txpool_rx.try_recv();
 
             match tx_watcher {
-                Ok(tx) => {
-                    self.insert_tx_into_pool(tx.unwrap());
-                }
+                Ok(tx) => match tx {
+                    Some(data) => self.insert_tx_into_pool(data),
+                    None => (),
+                },
                 _ => {}
             }
         }
