@@ -10,4 +10,39 @@ A simple app developed to fix some concepts about Rust and Blockchains
 3. Transaction Implementation ✅
 4. TXPool ✅
 5. RPC ✅
-6. I don't know :)
+6. State
+7. Signatures
+8. EVM
+
+
+### Executing
+
+Create necessary files:
+```
+touch files/chain.json
+touch files/txpool.json
+```
+
+Just run
+```
+cargo run
+```
+
+### Structure of Requests
+
+Each request (or method) is structured like this:
+```
+method|args
+```
+
+So, you need to send in this format to execute the RPC methods.
+
+### RPC
+
+The RPC listen on the 6565 port and have only one method so far:
+1. send_tx -> Which will send a simple tx (really?!) from one account to another one
+```
+Example: send_tx|from:user1,to:user2,amount:100
+
+echo 'send_tx|from:user1,to:user2,amount:100' | ncat localhost 6565
+```
