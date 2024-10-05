@@ -53,6 +53,10 @@ impl Block {
 
         return tmp_block;
     }
+
+    pub fn enconde(self) -> Vec<u8> {
+        return serde_json::to_vec(&self).unwrap();
+    }
 }
 
 #[allow(dead_code)]

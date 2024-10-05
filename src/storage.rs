@@ -1,31 +1,50 @@
 use crate::models::*;
+
+use rusty_leveldb::{LdbIterator, DB};
+
 use serde_json;
 use std::fs::*;
 use std::io::Write;
 
-static BLOCKCHAIN_FILE: &str = "./files/chain.json";
 static TXPOOL_FILE: &str = "./files/txpool.json";
 
 // Saving the Current State of the Blockchain
-pub fn save_blockchain_data(blockchain: &Vec<Block>) {
-    let mut file = File::create(BLOCKCHAIN_FILE)
-        .expect("Error Opening chain.json file in save_blockchain_data");
+pub fn save_blockchain_data(blocks: &Vec<Block>) {
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open("./files/betchain", opt).unwrap();
 
-    let blockchain_list_json = serde_json::to_string_pretty(blockchain).unwrap();
-
-    file.write_all(blockchain_list_json.as_bytes())
-        .expect("Error in writing to blockchain.json file");
-    file.flush().expect("Error in Flushing");
+    for block in blocks {
+        let _ = db.put(
+            format!("{:?}", block.number.clone()).as_bytes(),
+            block.clone().enconde().as_slice(),
+        );
+    }
 }
 
-// Retrieving the current state of the Blockchain
 pub fn get_blockchain_data() -> Vec<Block> {
-    let file =
-        File::open(BLOCKCHAIN_FILE).expect("Error Opening chain.json in get_blockchain_data");
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open("./files/betchain", opt).unwrap();
 
-    let tmp_blockchain = serde_json::from_reader(&file).unwrap_or(Vec::new());
+    let mut blocks: Vec<Block> = Vec::<Block>::new();
 
-    return tmp_blockchain;
+    let mut current_blocks = db.new_iter().unwrap();
+
+    loop {
+        let tmp_block = current_blocks.next();
+        match tmp_block {
+            Some(data) => {
+                let block: Block = serde_json::from_slice(data.1.as_slice()).unwrap();
+                blocks.push(block);
+            }
+            None => {
+                break;
+            }
+        }
+    }
+
+    return blocks;
 }
 
 pub fn save_txpool_data(tx: &Vec<Transaction>) {

@@ -6,7 +6,7 @@ A simple app developed to fix some concepts about Rust and Blockchains
 
 1. Initial Version ✅
 2. Block Mining ✅
-3. Persistence ✅
+3. Persistence (leveldb) ✅
 3. Transaction Implementation ✅
 4. TXPool ✅
 5. RPC ✅
@@ -14,14 +14,7 @@ A simple app developed to fix some concepts about Rust and Blockchains
 7. Signatures
 8. EVM
 
-
 ### Executing
-
-Create necessary files:
-```
-touch files/chain.json
-touch files/txpool.json
-```
 
 Just run
 ```
