@@ -57,11 +57,30 @@ async fn process_incomming_request(mut stream: TcpStream) -> Option<Transaction>
         return None;
     }
 
-    let result = match method.unwrap() {
-        "send_tx" => send_new_tx(data.unwrap()),
+    match method.unwrap() {
+        "send_tx" => {
+            let res = send_new_tx(data.unwrap());
+
+            if res.is_some() {
+                stream.try_write(b"Transaction Sent successfully!").unwrap();
+                stream.shutdown().await.unwrap();
+                return res;
+            } else {
+                stream.try_write(b"Error sending the Transaction").unwrap();
+                stream.shutdown().await.unwrap();
+
+                return None;
+            }
+        }
         "get_block_by_number" => {
             let response = query_block_data(data.unwrap());
             stream.try_write(response.as_bytes()).unwrap();
+            stream.shutdown().await.unwrap();
+            return None;
+        }
+        "get_balance_of" => {
+            let response = storage::get_balance_of(data.unwrap().to_string());
+            stream.try_write(response.to_string().as_bytes()).unwrap();
             stream.shutdown().await.unwrap();
             return None;
         }
@@ -71,17 +90,6 @@ async fn process_incomming_request(mut stream: TcpStream) -> Option<Transaction>
             return None;
         }
     };
-
-    if result.is_some() {
-        stream.try_write(b"Transaction Sent successfully!").unwrap();
-        stream.shutdown().await.unwrap();
-        return result;
-    } else {
-        stream.try_write(b"Error sending the Transaction").unwrap();
-        stream.shutdown().await.unwrap();
-
-        return None;
-    }
 }
 
 fn send_new_tx(data: &str) -> Option<Transaction> {
@@ -122,7 +130,32 @@ fn send_new_tx(data: &str) -> Option<Transaction> {
     }
 
     if !from.is_empty() && !to.is_empty() {
+        let previous_from_balance: u64 = storage::get_balance_of(from.to_string());
+        let previous_to_balance: u64 = storage::get_balance_of(to.to_string());
+
+        let after_from_balance = previous_from_balance.checked_sub(amount);
+
+        if after_from_balance.is_none() {
+            return None;
+        }
+
+        let after_to_balance = previous_to_balance.checked_add(amount);
+
+        if after_to_balance.is_none() {
+            return None;
+        }
+
         let tmp_tx: Transaction = Transaction::new(from.to_string(), to.to_string(), amount);
+
+        storage::save_balance_of(from.to_string(), after_from_balance.unwrap());
+        storage::save_balance_of(to.to_string(), after_to_balance.unwrap());
+
+        println!(
+            "From Balance: {:?}",
+            storage::get_balance_of(from.to_string())
+        );
+        println!("To Balance: {:?}", storage::get_balance_of(to.to_string()));
+
         return Some(tmp_tx);
     }
 

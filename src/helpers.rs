@@ -1,6 +1,10 @@
-use crate::models::{Blockchain, Transaction};
+use crate::{
+    models::{Blockchain, Transaction},
+    storage,
+};
 
 pub fn init_blockchain() -> Blockchain {
+    storage::save_balance_of("betty".to_string(), 666666);
     return Blockchain::new();
 }
 

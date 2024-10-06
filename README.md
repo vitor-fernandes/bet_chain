@@ -10,7 +10,7 @@ A simple app developed to fix some concepts about Rust and Blockchains
 3. Transaction Implementation ✅
 4. TXPool ✅
 5. RPC ✅
-6. State
+6. State ✅
 7. Signatures
 8. EVM
 
@@ -45,4 +45,11 @@ echo 'send_tx|from:user1,to:user2,amount:100' | ncat localhost 6565
 Example: get_block_by_number|23
 
 echo 'get_block_by_number|23' | ncat localhost 6565
+```
+
+3. get_balance_of -> Returns the current balance of an User
+```
+Example: get_balance_of|betty
+
+echo 'get_balance_of|betty' | ncat localhost 6565
 ```
