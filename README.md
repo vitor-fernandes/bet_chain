@@ -53,3 +53,10 @@ Example: get_balance_of|betty
 
 echo 'get_balance_of|betty' | ncat localhost 6565
 ```
+
+4. get_transaction -> Returns the information of an executed transaction
+```
+Example: get_transaction|tx_hash
+
+echo 'get_transaction|463d49fe26b4b71937901b21918c39399e6b9acbe3dae4a7bb73a833880fcb39' | ncat localhost 6565
+```

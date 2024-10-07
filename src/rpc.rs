@@ -84,6 +84,12 @@ async fn process_incomming_request(mut stream: TcpStream) -> Option<Transaction>
             stream.shutdown().await.unwrap();
             return None;
         }
+        "get_transaction" => {
+            let response = query_transaction_data(data.unwrap().to_string());
+            stream.try_write(response.as_bytes()).unwrap();
+            stream.shutdown().await.unwrap();
+            return None;
+        }
         _ => {
             stream.try_write(b"Method not Found!").unwrap();
             stream.shutdown().await.unwrap();
@@ -150,11 +156,7 @@ fn send_new_tx(data: &str) -> Option<Transaction> {
         storage::save_balance_of(from.to_string(), after_from_balance.unwrap());
         storage::save_balance_of(to.to_string(), after_to_balance.unwrap());
 
-        println!(
-            "From Balance: {:?}",
-            storage::get_balance_of(from.to_string())
-        );
-        println!("To Balance: {:?}", storage::get_balance_of(to.to_string()));
+        storage::save_transaction(tmp_tx.clone());
 
         return Some(tmp_tx);
     }
@@ -169,5 +171,15 @@ fn query_block_data(data: &str) -> String {
             return serde_json::to_string(&data).unwrap();
         }
         None => return String::from("Block Not Found"),
+    }
+}
+
+fn query_transaction_data(data: String) -> String {
+    let tx = storage::get_transaction(data);
+    match tx {
+        Some(tx_data) => {
+            return serde_json::to_string(&tx_data).unwrap();
+        }
+        None => return String::from("Transaction Not Found"),
     }
 }

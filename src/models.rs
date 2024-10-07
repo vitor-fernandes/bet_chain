@@ -62,7 +62,7 @@ impl Block {
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Transaction {
-    hash: String,
+    pub hash: String,
     from_address: String,
     to_address: String,
     amount: u64,
@@ -97,6 +97,10 @@ impl Transaction {
             "from:{},to:{},amount:{},hash:{},timestamp:{}",
             self.from_address, self.to_address, self.amount, self.hash, self.timestamp
         );
+    }
+
+    pub fn enconde(&self) -> Vec<u8> {
+        return serde_json::to_vec(&self).unwrap();
     }
 }
 

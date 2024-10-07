@@ -8,6 +8,8 @@ use std::io::Write;
 
 static BLOCKS_FILE: &str = "./files/betchain/blocks";
 static BALANCES_FILE: &str = "./files/betchain/balances";
+static TRANSACTIONS_FILE: &str = "./files/betchain/transactions";
+
 static TXPOOL_FILE: &str = "./files/txpool.json";
 
 // Saving the Current State of the Blockchain
@@ -122,4 +124,31 @@ pub fn save_balance_of(user: String, balance: u64) {
     let _ = db.put(user.as_bytes(), balance.to_string().as_bytes());
 
     let _ = db.close();
+}
+
+pub fn save_transaction(tx: Transaction) {
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open(TRANSACTIONS_FILE, opt).unwrap();
+
+    let _ = db.put(tx.hash.clone().as_bytes(), tx.enconde().as_slice());
+    let _ = db.close();
+}
+
+pub fn get_transaction(hash: String) -> Option<Transaction> {
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open(TRANSACTIONS_FILE, opt).unwrap();
+
+    match db.get(hash.as_bytes()) {
+        Some(data) => {
+            let tx: Transaction = serde_json::from_slice(&data).unwrap();
+            let _ = db.close();
+            return Some(tx);
+        }
+        None => {
+            let _ = db.close();
+            return None;
+        }
+    };
 }
