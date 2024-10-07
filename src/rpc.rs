@@ -62,7 +62,9 @@ async fn process_incomming_request(mut stream: TcpStream) -> Option<Transaction>
             let res = send_new_tx(data.unwrap());
 
             if res.is_some() {
-                stream.try_write(b"Transaction Sent successfully!").unwrap();
+                stream
+                    .try_write(res.clone().unwrap().hash.to_string().as_bytes())
+                    .unwrap();
                 stream.shutdown().await.unwrap();
                 return res;
             } else {
