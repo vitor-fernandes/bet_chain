@@ -92,6 +92,12 @@ async fn process_incomming_request(mut stream: TcpStream) -> Option<Transaction>
             stream.shutdown().await.unwrap();
             return None;
         }
+        "get_user_transactions" => {
+            let response = get_transactions_of_user(data.unwrap().to_string());
+            stream.try_write(response.as_bytes()).unwrap();
+            stream.shutdown().await.unwrap();
+            return None;
+        }
         _ => {
             stream.try_write(b"Method not Found!").unwrap();
             stream.shutdown().await.unwrap();
@@ -196,4 +202,19 @@ fn query_transaction_data(data: String) -> String {
         }
         None => return String::from("Transaction Not Found"),
     }
+}
+
+fn get_transactions_of_user(data: String) -> String {
+    let mut all_txs: Vec<String> = Vec::new();
+
+    match storage::get_transactions_of_user(data) {
+        Some(txs) => {
+            all_txs = txs;
+        }
+        None => (),
+    }
+
+    let tmp_str_txs: String = all_txs.join(",");
+
+    return tmp_str_txs;
 }

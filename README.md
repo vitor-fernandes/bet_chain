@@ -60,3 +60,10 @@ Example: get_transaction|tx_hash
 
 echo 'get_transaction|463d49fe26b4b71937901b21918c39399e6b9acbe3dae4a7bb73a833880fcb39' | ncat localhost 6565
 ```
+
+5. get_user_transactions -> Returns all txs which the user was involved (sent and received)
+```
+Example: get_user_transactions|user
+
+echo 'get_user_transactions|betty' | ncat localhost 6565
+```

@@ -40,7 +40,7 @@ async fn main() {
         blockchain.insert_block(new_block);
 
         // Sleeping by 3 secs to mine the next block
-        let seconds = time::Duration::from_secs(10);
+        let seconds = time::Duration::from_secs(3);
         thread::sleep(seconds);
     }
 }
