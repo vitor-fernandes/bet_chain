@@ -5,6 +5,7 @@
 use bet_chain::helpers;
 use bet_chain::miner;
 use bet_chain::models::{Block, Blockchain, TXPool};
+use bet_chain::p2p;
 use std::{thread, time};
 
 #[tokio::main]
@@ -14,10 +15,16 @@ async fn main() {
 
     // Pool containing all TXs
     let mut txpool: TXPool = TXPool::new();
+    //et mut p2p: P2P = P2P::new();
 
     // Spawning the TX Pool worker
     thread::spawn(move || {
         txpool.start();
+    });
+
+    // Spawning the P2P Server
+    thread::spawn(move || {
+        p2p::start();
     });
 
     // Running Forever

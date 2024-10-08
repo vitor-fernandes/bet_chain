@@ -13,6 +13,7 @@ A simple app developed to fix some concepts about Rust and Blockchains
 6. State ✅
 7. Signatures
 8. EVM
+9. P2P
 
 ### Executing
 
@@ -20,6 +21,26 @@ Just run
 ```
 cargo run
 ```
+
+### P2P Protocol
+
+The implementation of the Peer-To-Peer Protocol, allowing the nodes to communicate between after estabilishing the connection.
+
+A new TCP port will be opened to deal with the protocol, in this case **55666**
+
+This implementation has just one message:
+  1. CONNECT -> Initial message, meaning a new node wants to connect with the current node.
+  ```
+  Message structure: [connection] -> A simple string
+  What current node must do:
+    - Stores the new peer address (peer_ip:55666) into the known peers array.
+  Returns: [connected] -> A simple string
+  ```
+
+Only connected nodes can share information (i.e, forwarding blocks)
+
+When a node receive a new TX or produce a new block, it will save locally and forward this information to it's peers. The peers must validate the information and save it in their ledger.
+
 
 ### Structure of Requests
 
