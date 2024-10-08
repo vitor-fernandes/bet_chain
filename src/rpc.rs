@@ -160,6 +160,18 @@ fn send_new_tx(data: &str) -> Option<Transaction> {
 
         storage::save_transaction(tmp_tx.clone());
 
+        let mut user_from_txs: Vec<String> =
+            storage::get_transactions_of_user(from.to_string()).unwrap();
+
+        let mut user_to_txs: Vec<String> =
+            storage::get_transactions_of_user(to.to_string()).unwrap();
+
+        user_from_txs.push(tmp_tx.clone().hash);
+        user_to_txs.push(tmp_tx.clone().hash);
+
+        storage::save_transaction_of_user(from.to_string(), user_from_txs);
+        storage::save_transaction_of_user(to.to_string(), user_to_txs);
+
         return Some(tmp_tx);
     }
 

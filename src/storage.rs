@@ -4,7 +4,7 @@ use rusty_leveldb::{LdbIterator, DB};
 
 use serde_json;
 use std::fs::*;
-use std::io::Write;
+use std::io::{Read, Write};
 
 static BLOCKS_FILE: &str = "./files/betchain/blocks";
 static BALANCES_FILE: &str = "./files/betchain/balances";
@@ -122,7 +122,6 @@ pub fn save_balance_of(user: String, balance: u64) {
     let mut db = DB::open(BALANCES_FILE, opt).unwrap();
 
     let _ = db.put(user.as_bytes(), balance.to_string().as_bytes());
-
     let _ = db.close();
 }
 
@@ -149,6 +148,47 @@ pub fn get_transaction(hash: String) -> Option<Transaction> {
         None => {
             let _ = db.close();
             return None;
+        }
+    };
+}
+
+pub fn save_transaction_of_user(user: String, txs: Vec<String>) {
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open(TRANSACTIONS_FILE, opt).unwrap();
+
+    let all_txs: String = txs.join(",");
+
+    let _ = db.put(user.as_bytes(), all_txs.as_bytes());
+    let _ = db.close();
+}
+
+pub fn get_transactions_of_user(user: String) -> Option<Vec<String>> {
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open(TRANSACTIONS_FILE, opt).unwrap();
+
+    match db.get(user.as_bytes()) {
+        Some(data) => {
+            let mut tmp = String::from("");
+
+            for c in data.iter() {
+                tmp.push(char::from(c.to_owned()));
+            }
+
+            let txs: Vec<&str> = tmp.split(",").collect::<Vec<&str>>();
+
+            let mut tmp: Vec<String> = Vec::new();
+            for tx in txs.iter() {
+                tmp.push(tx.to_string());
+            }
+
+            let _ = db.close();
+            return Some(tmp);
+        }
+        None => {
+            let _ = db.close();
+            return Some(Vec::new());
         }
     };
 }
