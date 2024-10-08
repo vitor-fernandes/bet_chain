@@ -144,6 +144,7 @@ fn send_new_tx(data: &str) -> Option<Transaction> {
     }
 
     if !from.is_empty() && !to.is_empty() {
+        let mut user_nonce: u64 = storage::get_user_nonce(from.to_string());
         let previous_from_balance: u64 = storage::get_balance_of(from.to_string());
         let previous_to_balance: u64 = storage::get_balance_of(to.to_string());
 
@@ -159,7 +160,12 @@ fn send_new_tx(data: &str) -> Option<Transaction> {
             return None;
         }
 
-        let tmp_tx: Transaction = Transaction::new(from.to_string(), to.to_string(), amount);
+        let tmp_tx: Transaction =
+            Transaction::new(from.to_string(), to.to_string(), amount, user_nonce);
+
+        user_nonce += 1;
+
+        storage::set_user_nonce(from.to_string(), user_nonce);
 
         storage::save_balance_of(from.to_string(), after_from_balance.unwrap());
         storage::save_balance_of(to.to_string(), after_to_balance.unwrap());

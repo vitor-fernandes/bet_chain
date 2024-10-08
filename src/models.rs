@@ -67,17 +67,18 @@ pub struct Transaction {
     to_address: String,
     amount: u64,
     timestamp: u64,
+    nonce: u64,
 }
 
 impl Transaction {
-    pub fn new(from: String, to: String, amount: u64) -> Transaction {
+    pub fn new(from: String, to: String, amount: u64, nonce: u64) -> Transaction {
         let timestamp: u64 = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
         let hash: String = digest(format!(
-            "from:{},to:{},amount:{},timestamp:{}",
-            from, to, amount, timestamp
+            "from:{},to:{},amount:{},timestamp:{},nonce:{}",
+            from, to, amount, timestamp, nonce
         ));
 
         let tx = Transaction {
@@ -86,6 +87,7 @@ impl Transaction {
             amount,
             hash,
             timestamp,
+            nonce,
         };
 
         return tx;

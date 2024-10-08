@@ -4,11 +4,12 @@ use rusty_leveldb::{LdbIterator, DB};
 
 use serde_json;
 use std::fs::*;
-use std::io::{Read, Write};
+use std::io::Write;
 
 static BLOCKS_FILE: &str = "./files/betchain/blocks";
 static BALANCES_FILE: &str = "./files/betchain/balances";
 static TRANSACTIONS_FILE: &str = "./files/betchain/transactions";
+static NONCES_FILE: &str = "./files/betchain/nonces";
 
 static TXPOOL_FILE: &str = "./files/txpool.json";
 
@@ -191,4 +192,31 @@ pub fn get_transactions_of_user(user: String) -> Option<Vec<String>> {
             return Some(Vec::new());
         }
     };
+}
+
+pub fn get_user_nonce(user: String) -> u64 {
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open(NONCES_FILE, opt).unwrap();
+
+    match db.get(user.as_bytes()) {
+        Some(data) => {
+            let nonce: u64 = serde_json::from_slice(&data).unwrap();
+            let _ = db.close();
+            return nonce;
+        }
+        None => {
+            let _ = db.close();
+            return 0;
+        }
+    };
+}
+
+pub fn set_user_nonce(user: String, nonce: u64) {
+    let mut opt = rusty_leveldb::Options::default();
+    opt.create_if_missing = true;
+    let mut db = DB::open(NONCES_FILE, opt).unwrap();
+
+    let _ = db.put(user.as_bytes(), nonce.to_string().as_bytes());
+    let _ = db.close();
 }
