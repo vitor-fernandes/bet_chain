@@ -1,6 +1,6 @@
 use crate::models::*;
 
-use rusty_leveldb::{LdbIterator, DB};
+use rocksdb::{IteratorMode, Options, DB};
 
 use serde_json;
 use std::fs::*;
@@ -15,62 +15,85 @@ static TXPOOL_FILE: &str = "./files/txpool.json";
 
 // Saving the Current State of the Blockchain
 pub fn save_blockchain_data(block: &Block) {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(BLOCKS_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, BLOCKS_FILE).unwrap();
 
     let _ = db.put(
         format!("{:?}", block.number.clone()).as_bytes(),
         block.clone().enconde().as_slice(),
     );
 
-    let _ = db.close();
+    let _ = db.put("latest", block.clone().enconde().as_slice());
+
+    let _ = DB::destroy(&opt, BLOCKS_FILE);
 }
 
 pub fn get_blockchain_data() -> Vec<Block> {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(BLOCKS_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, BLOCKS_FILE).unwrap();
 
     let mut blocks: Vec<Block> = Vec::<Block>::new();
 
-    let mut current_blocks = db.new_iter().unwrap();
+    let iter_blocks = db.iterator(IteratorMode::Start);
 
-    loop {
-        let tmp_block = current_blocks.next();
-        match tmp_block {
-            Some(data) => {
-                let block: Block = serde_json::from_slice(data.1.as_slice()).unwrap();
-                blocks.push(block);
-            }
-            None => {
-                break;
-            }
-        }
+    for iter in iter_blocks {
+        let (_, value) = iter.unwrap();
+        let block: Block = serde_json::from_slice(&value).unwrap();
+        blocks.push(block);
     }
 
     blocks.sort_by_key(|block| block.number);
 
-    let _ = db.close();
+    let _ = DB::destroy(&opt, BLOCKS_FILE);
 
     return blocks;
 }
 
 pub fn get_block_by_number(number: &str) -> Option<Block> {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(BLOCKS_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, BLOCKS_FILE).unwrap();
 
     let block = db.get(number.as_bytes());
-
-    let _ = db.close();
+    let _ = DB::destroy(&opt, BLOCKS_FILE);
 
     match block {
-        Some(data) => {
-            let tmp_block: Block = serde_json::from_slice(data.as_slice()).unwrap();
-            return Some(tmp_block);
+        Ok(data) => match data {
+            Some(tmp_block) => {
+                let block_obj: Block = serde_json::from_slice(tmp_block.as_slice()).unwrap();
+                return Some(block_obj);
+            }
+            None => None,
+        },
+        Err(e) => {
+            print!("Error getting block number: {e:?}");
+            None
         }
-        None => None,
+    }
+}
+
+pub fn get_last_mined_block() -> Option<Block> {
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, BLOCKS_FILE).unwrap();
+
+    let block = db.get("latest");
+    let _ = DB::destroy(&opt, BLOCKS_FILE);
+
+    match block {
+        Ok(data) => match data {
+            Some(tmp_block) => {
+                let block_obj: Block = serde_json::from_slice(tmp_block.as_slice()).unwrap();
+                return Some(block_obj);
+            }
+            None => None,
+        },
+        Err(e) => {
+            print!("Error getting block number: {e:?}");
+            None
+        }
     }
 }
 
@@ -94,20 +117,23 @@ pub fn get_txpool_data() -> Vec<Transaction> {
 }
 
 pub fn get_balance_of(user: String) -> u64 {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(BALANCES_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, BALANCES_FILE).unwrap();
 
     let block = db.get(user.as_bytes());
 
-    let _ = db.close();
+    let _ = DB::destroy(&opt, BALANCES_FILE);
 
     match block {
-        Some(data) => {
-            let balance: u64 = serde_json::from_slice(data.as_slice()).unwrap();
-            return balance;
-        }
-        None => {
+        Ok(data) => match data {
+            Some(value) => {
+                let balance: u64 = serde_json::from_slice(value.as_slice()).unwrap();
+                return balance;
+            }
+            None => 0,
+        },
+        Err(_) => {
             let balance_zero_u64: u64 = 0;
             save_balance_of(user, balance_zero_u64);
             let _ = return balance_zero_u64;
@@ -116,105 +142,116 @@ pub fn get_balance_of(user: String) -> u64 {
 }
 
 pub fn save_balance_of(user: String, balance: u64) {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(BALANCES_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, BALANCES_FILE).unwrap();
 
     let _ = db.put(user.as_bytes(), balance.to_string().as_bytes());
-    let _ = db.close();
+    let _ = DB::destroy(&opt, BALANCES_FILE);
 }
 
 pub fn save_transaction(tx: Transaction) {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(TRANSACTIONS_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, TRANSACTIONS_FILE).unwrap();
 
     let _ = db.put(tx.hash.clone().as_bytes(), tx.enconde().as_slice());
-    let _ = db.close();
+    let _ = DB::destroy(&opt, TRANSACTIONS_FILE);
 }
 
 pub fn get_transaction(hash: String) -> Option<Transaction> {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(TRANSACTIONS_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, TRANSACTIONS_FILE).unwrap();
 
     match db.get(hash.as_bytes()) {
-        Some(data) => {
-            let tx: Transaction = serde_json::from_slice(&data).unwrap();
-            let _ = db.close();
-            return Some(tx);
-        }
-        None => {
-            let _ = db.close();
+        Ok(data) => match data {
+            Some(value) => {
+                let tx: Transaction = serde_json::from_slice(&value).unwrap();
+                let _ = DB::destroy(&opt, TRANSACTIONS_FILE);
+                return Some(tx);
+            }
+            None => None,
+        },
+        Err(_) => {
+            let _ = DB::destroy(&opt, TRANSACTIONS_FILE);
             return None;
         }
-    };
+    }
 }
 
 pub fn save_transaction_of_user(user: String, txs: Vec<String>) {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(TRANSACTIONS_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, TRANSACTIONS_FILE).unwrap();
 
     let all_txs: String = txs.join(",");
 
     let _ = db.put(user.as_bytes(), all_txs.as_bytes());
-    let _ = db.close();
+    let _ = DB::destroy(&opt, TRANSACTIONS_FILE);
 }
 
 pub fn get_transactions_of_user(user: String) -> Option<Vec<String>> {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(TRANSACTIONS_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, TRANSACTIONS_FILE).unwrap();
 
-    match db.get(user.as_bytes()) {
-        Some(data) => {
-            let mut tmp = String::from("");
+    let txs = db.get(user.as_bytes());
 
-            for c in data.iter() {
-                tmp.push(char::from(c.to_owned()));
+    match txs {
+        Ok(data) => match data {
+            Some(value) => {
+                let mut tmp = String::from("");
+
+                for c in value.iter() {
+                    tmp.push(char::from(c.to_owned()));
+                }
+
+                let txs: Vec<&str> = tmp.split(",").collect::<Vec<&str>>();
+
+                let mut tmp: Vec<String> = Vec::new();
+                for tx in txs.iter() {
+                    tmp.push(tx.to_string());
+                }
+
+                let _ = DB::destroy(&opt, TRANSACTIONS_FILE);
+                return Some(tmp);
             }
-
-            let txs: Vec<&str> = tmp.split(",").collect::<Vec<&str>>();
-
-            let mut tmp: Vec<String> = Vec::new();
-            for tx in txs.iter() {
-                tmp.push(tx.to_string());
-            }
-
-            let _ = db.close();
-            return Some(tmp);
-        }
-        None => {
-            let _ = db.close();
+            None => Some(Vec::new()),
+        },
+        Err(_) => {
+            let _ = DB::destroy(&opt, TRANSACTIONS_FILE);
             return Some(Vec::new());
         }
-    };
+    }
 }
 
 pub fn get_user_nonce(user: String) -> u64 {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(NONCES_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, NONCES_FILE).unwrap();
 
     match db.get(user.as_bytes()) {
-        Some(data) => {
-            let nonce: u64 = serde_json::from_slice(&data).unwrap();
-            let _ = db.close();
-            return nonce;
-        }
-        None => {
-            let _ = db.close();
+        Ok(data) => match data {
+            Some(value) => {
+                let nonce: u64 = serde_json::from_slice(&value).unwrap();
+                let _ = DB::destroy(&opt, NONCES_FILE);
+                return nonce;
+            }
+            None => 0,
+        },
+        Err(_) => {
+            let _ = DB::destroy(&opt, NONCES_FILE);
             return 0;
         }
-    };
+    }
 }
 
 pub fn set_user_nonce(user: String, nonce: u64) {
-    let mut opt = rusty_leveldb::Options::default();
-    opt.create_if_missing = true;
-    let mut db = DB::open(NONCES_FILE, opt).unwrap();
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, NONCES_FILE).unwrap();
 
     let _ = db.put(user.as_bytes(), nonce.to_string().as_bytes());
-    let _ = db.close();
+    let _ = DB::destroy(&opt, NONCES_FILE);
 }

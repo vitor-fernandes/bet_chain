@@ -6,7 +6,7 @@ A simple app developed to fix some concepts about Rust and Blockchains
 
 1. Initial Version ✅
 2. Block Mining ✅
-3. Persistence (leveldb) ✅
+3. Persistence (rocksdb) ✅
 3. Transaction Implementation ✅
 4. TXPool ✅
 5. RPC ✅
@@ -17,7 +17,6 @@ A simple app developed to fix some concepts about Rust and Blockchains
 
 ### Executing
 
-Just run
 ```
 cargo run
 ```

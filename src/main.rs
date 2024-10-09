@@ -36,13 +36,15 @@ async fn main() {
         let seconds = time::Duration::from_secs(3);
         thread::sleep(seconds);
 
-        // TMP impl
-        let tmp_blockchain = blockchain.clone();
-        let last_block: &Block = tmp_blockchain.get_last_block();
-        // // // // // //
+        // // TMP impl
+        // let tmp_blockchain = blockchain.clone();
+        // let last_block: &Block = tmp_blockchain.get_last_block();
+        // // // // // // //
+
+        let last_block: Block = storage::get_last_mined_block().unwrap();
 
         // Creating a new block with the lastest block information
-        let new_block = miner::create_new_block(last_block).await;
+        let new_block = miner::create_new_block(&last_block).await;
 
         // Logging current block
         println!(
