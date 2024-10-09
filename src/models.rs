@@ -130,19 +130,19 @@ impl Blockchain {
                 transactions,
             };
 
+            // Save current blockchain's state
+            storage::save_blockchain_data(&genesis_block);
+
             // Adding the Genesis Block to the Ledger
             blocks.push(genesis_block);
-
-            // Save current blockchain's state
-            storage::save_blockchain_data(&blocks);
         }
 
         return Blockchain { blocks };
     }
 
     pub fn insert_block(&mut self, block: Block) {
+        storage::save_blockchain_data(&block);
         self.blocks.push(block);
-        storage::save_blockchain_data(&self.blocks);
     }
 
     pub fn get_last_block(&self) -> &Block {

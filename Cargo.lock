@@ -53,6 +53,7 @@ dependencies = [
 name = "bet_chain"
 version = "0.1.0"
 dependencies = [
+ "rand",
  "rusty-leveldb",
  "serde",
  "serde_json",

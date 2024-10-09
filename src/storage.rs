@@ -14,17 +14,15 @@ static NONCES_FILE: &str = "./files/betchain/nonces";
 static TXPOOL_FILE: &str = "./files/txpool.json";
 
 // Saving the Current State of the Blockchain
-pub fn save_blockchain_data(blocks: &Vec<Block>) {
+pub fn save_blockchain_data(block: &Block) {
     let mut opt = rusty_leveldb::Options::default();
     opt.create_if_missing = true;
     let mut db = DB::open(BLOCKS_FILE, opt).unwrap();
 
-    for block in blocks {
-        let _ = db.put(
-            format!("{:?}", block.number.clone()).as_bytes(),
-            block.clone().enconde().as_slice(),
-        );
-    }
+    let _ = db.put(
+        format!("{:?}", block.number.clone()).as_bytes(),
+        block.clone().enconde().as_slice(),
+    );
 
     let _ = db.close();
 }

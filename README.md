@@ -28,13 +28,25 @@ The implementation of the Peer-To-Peer Protocol, allowing the nodes to communica
 
 A new TCP port will be opened to deal with the protocol, in this case **55666**
 
-This implementation has just one message:
-  1. CONNECT -> Initial message, meaning a new node wants to connect with the current node.
+This implementation has three kind messages:
+  1. Connect -> Initial message, meaning a new node wants to connect with the current node.
   ```
   Message structure: [connection] -> A simple string
   What current node must do:
     - Stores the new peer address (peer_ip:55666) into the known peers array.
   Returns: [connected] -> A simple string
+  ```
+  2. ForwardBlock -> Sent by the node's miner when a new block is created (only the node itself can execute this message)
+  ```
+  Message structure: [forward_block|BLOCK] -> A simple string containing the block to be forwarded to it's peers
+  What current node must do:
+    - The current node will forward the block to all it's connected peers trough the ReceiveBlock message
+  ```
+  3. ReceiveBlock -> Received when other peer finished the block creation firstly.
+  ```
+  Message structure: [receive_block|BLOCK] -> Same as ForwardBlock
+  What current node must do:
+    - The current node needs to commit it to it's ledger
   ```
 
 Only connected nodes can share information (i.e, forwarding blocks)
