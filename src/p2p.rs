@@ -10,6 +10,10 @@ use tokio::{
     net::{TcpListener, TcpStream},
 };
 
+use crate::models::Block;
+
+use crate::storage;
+
 enum MessageType {
     Connect,
     ForwardBlock,
@@ -40,6 +44,10 @@ impl P2P {
 
     pub fn get_peers(&self) -> Vec<String> {
         return self.peers.clone();
+    }
+
+    pub fn is_peer(&self, peer: String) -> bool {
+        return self.get_peers().contains(&peer);
     }
 
     pub async fn forward_block_to_peers(&self, block: String) {
@@ -88,7 +96,10 @@ pub async fn start(possible_peers: Vec<String>) {
                     MessageType::ForwardBlock => {
                         p2p.forward_block_to_peers(message.body).await;
                     }
-                    MessageType::ReceiveBlock => {}
+                    MessageType::ReceiveBlock => {
+                        let block: Block = serde_json::from_str(&message.body).unwrap();
+                        storage::save_blockchain_data(&block);
+                    }
                 },
                 None => (),
             },
@@ -99,7 +110,6 @@ pub async fn start(possible_peers: Vec<String>) {
 
 async fn process_request(mut stream: TcpStream) -> Option<Message> {
     let mut buffer: [u8; 10000] = [0; 10000];
-
     stream.read(&mut buffer).await.unwrap();
 
     let buffer_chars = buffer.map(|x| char::from(x));
