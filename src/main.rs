@@ -4,7 +4,7 @@
 
 use bet_chain::helpers;
 use bet_chain::miner;
-use bet_chain::models::{Block, Blockchain, TXPool};
+use bet_chain::models::{Block, TXPool};
 use bet_chain::p2p;
 use bet_chain::storage;
 use std::{thread, time};
@@ -12,7 +12,7 @@ use std::{thread, time};
 #[tokio::main]
 async fn main() {
     // Initializing the Blockchain
-    let mut blockchain: Blockchain = helpers::init_blockchain();
+    helpers::init_blockchain();
 
     // Possible Peers to connect
     let peers: Vec<String> = ["localhost:55666".to_string()].to_vec();
@@ -36,11 +36,7 @@ async fn main() {
         let seconds = time::Duration::from_secs(3);
         thread::sleep(seconds);
 
-        // // TMP impl
-        // let tmp_blockchain = blockchain.clone();
-        // let last_block: &Block = tmp_blockchain.get_last_block();
-        // // // // // // //
-
+        // Last mined block knowed by this Node
         let last_block: Block = storage::get_last_mined_block().unwrap();
 
         // Creating a new block with the lastest block information
@@ -51,8 +47,5 @@ async fn main() {
             "Mining blocks: Current Block Number: {:?}",
             new_block.clone().number
         );
-
-        // Saving the new block into the storage
-        blockchain.insert_block(new_block);
     }
 }

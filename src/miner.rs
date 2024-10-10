@@ -21,7 +21,7 @@ pub async fn create_new_block(previous_block: &Block) -> Block {
         txs.clone(),
     );
 
-    // Simple PoW with sequential nonce update + block difficulty 2
+    // Simple PoW with sequential nonce update + block difficulty 3
     while !block.hash.starts_with("000") {
         nonce = nonce_rng.gen::<u64>();
         block = Block::new(
@@ -32,10 +32,14 @@ pub async fn create_new_block(previous_block: &Block) -> Block {
         );
     }
 
+    // Cleaning the TXPool
     storage::save_txpool_data(&Vec::<Transaction>::new());
 
-    let mut stream = TcpStream::connect("127.0.0.1:55666").await.unwrap();
+    // Storing the new block into the ledger
+    storage::save_blockchain_data(&block);
 
+    // Creating the Stream and sending the new mined block to the P2P Implementation
+    let mut stream = TcpStream::connect("127.0.0.1:55666").await.unwrap();
     stream
         .write(
             format!(

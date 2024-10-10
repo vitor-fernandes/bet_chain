@@ -108,50 +108,6 @@ impl Transaction {
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Blockchain {
-    blocks: Vec<Block>,
-}
-
-impl Blockchain {
-    pub fn new() -> Blockchain {
-        let mut blocks: Vec<Block> = storage::get_blockchain_data();
-
-        // Genesis Block generation and insertion
-        if blocks.len() == 0 {
-            let transactions: Vec<Transaction> = Vec::new();
-            let tx_root = helpers::gen_tx_root(&transactions);
-
-            let genesis_block: Block = Block {
-                hash: "0".repeat(64).to_string(),
-                previous_hash: "null".to_string(),
-                number: 0,
-                nonce: 0,
-                tx_root,
-                transactions,
-            };
-
-            // Save current blockchain's state
-            storage::save_blockchain_data(&genesis_block);
-
-            // Adding the Genesis Block to the Ledger
-            blocks.push(genesis_block);
-        }
-
-        return Blockchain { blocks };
-    }
-
-    pub fn insert_block(&mut self, block: Block) {
-        storage::save_blockchain_data(&block);
-        self.blocks.push(block);
-    }
-
-    pub fn get_last_block(&self) -> &Block {
-        return self.blocks.last().unwrap();
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TXPool {
     transactions: Vec<Transaction>,
 }
