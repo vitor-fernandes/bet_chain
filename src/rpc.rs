@@ -7,7 +7,7 @@ use tokio::{
 
 #[tokio::main]
 pub async fn start(main_tx: mpsc::Sender<Option<Transaction>>) {
-    let listener = TcpListener::bind("127.0.0.1:6565").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:6565").await.unwrap();
 
     while let Ok((stream, _stream)) = listener.accept().await {
         let main_tx_cloned = main_tx.clone();

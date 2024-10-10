@@ -6,10 +6,10 @@ use serde_json;
 use std::fs::*;
 use std::io::Write;
 
-static BLOCKS_FILE: &str = "./files/betchain/blocks";
-static BALANCES_FILE: &str = "./files/betchain/balances";
-static TRANSACTIONS_FILE: &str = "./files/betchain/transactions";
-static NONCES_FILE: &str = "./files/betchain/nonces";
+static BLOCKS_FILE: &str = "./files/chain/blocks";
+static BALANCES_FILE: &str = "./files/chain/balances";
+static TRANSACTIONS_FILE: &str = "./files/chain/transactions";
+static NONCES_FILE: &str = "./files/chain/nonces";
 
 static TXPOOL_FILE: &str = "./files/txpool.json";
 

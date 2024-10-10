@@ -21,12 +21,14 @@ pub async fn create_new_block(previous_block: &Block) -> Block {
         txs.clone(),
     );
 
-    // Simple PoW with sequential nonce update + block difficulty 3
-    while !block.hash.starts_with("000") {
+    let last_block: &Block = previous_block;
+
+    // Simple PoW with sequential nonce update + block difficulty 4
+    while !block.hash.starts_with("0".repeat(4).as_str()) {
         nonce = nonce_rng.gen::<u64>();
         block = Block::new(
-            previous_block.hash.clone(),
-            previous_block.number.clone(),
+            last_block.hash.clone(),
+            last_block.number.clone(),
             nonce,
             txs.clone(),
         );

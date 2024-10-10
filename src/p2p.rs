@@ -38,6 +38,7 @@ impl P2P {
 
     pub fn insert_peer(&mut self, peer: String) {
         if !self.get_peers().contains(&peer) && peer.ne("") {
+            println!("Peer Added: {:?}", peer);
             self.peers.push(peer);
         }
     }
@@ -68,6 +69,8 @@ pub async fn start(possible_peers: Vec<String>) {
     for possible_peer in possible_peers.iter() {
         let res = TcpStream::connect(possible_peer).await;
         if res.is_ok() {
+            let mut stream = res.unwrap();
+            stream.write("connect".as_bytes()).await.unwrap();
             p2p.insert_peer(possible_peer.to_owned());
         }
     }
@@ -76,7 +79,7 @@ pub async fn start(possible_peers: Vec<String>) {
 
     let (tx, rx) = mpsc::channel::<Option<Message>>();
 
-    let listener = TcpListener::bind("127.0.0.1:55666").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:55666").await.unwrap();
 
     while let Ok((stream, _)) = listener.accept().await {
         let tmp_tx = tx.clone();
@@ -91,13 +94,13 @@ pub async fn start(possible_peers: Vec<String>) {
                     MessageType::Connect => {
                         let peer = message.body;
                         p2p.insert_peer(peer.clone());
-                        println!("Peer Added: {:?}", peer);
                     }
                     MessageType::ForwardBlock => {
                         p2p.forward_block_to_peers(message.body).await;
                     }
                     MessageType::ReceiveBlock => {
                         let block: Block = serde_json::from_str(&message.body).unwrap();
+                        println!("Received Block: {:?}", block.clone());
                         storage::save_blockchain_data(&block);
                     }
                 },

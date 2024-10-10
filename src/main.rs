@@ -15,7 +15,7 @@ async fn main() {
     helpers::init_blockchain();
 
     // Possible Peers to connect
-    let peers: Vec<String> = ["localhost:55666".to_string()].to_vec();
+    let peers: Vec<String> = ["localhost:55667".to_string()].to_vec();
 
     // Spawning the P2P Server
     thread::spawn(move || {
@@ -32,10 +32,6 @@ async fn main() {
 
     // Running Forever
     loop {
-        // Sleeping by 3 secs to mine the next block
-        let seconds = time::Duration::from_secs(3);
-        thread::sleep(seconds);
-
         // Last mined block knowed by this Node
         let last_block: Block = storage::get_last_mined_block().unwrap();
 
