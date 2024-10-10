@@ -153,6 +153,7 @@ async fn process_request(mut stream: TcpStream) -> Option<Message> {
 }
 
 async fn forward_block(data: String, stream: TcpStream) -> Option<Message> {
+    // Only forward blocks received by the node itself
     if stream.peer_addr().unwrap().ip().to_string().eq("127.0.0.1") {
         let block_str: String = serde_json::from_str(&data).unwrap();
 

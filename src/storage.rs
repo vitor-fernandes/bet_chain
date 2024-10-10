@@ -17,16 +17,23 @@ static TXPOOL_FILE: &str = "./files/txpool.json";
 pub fn save_blockchain_data(block: &Block) {
     let mut opt = Options::default();
     opt.create_if_missing(true);
-    let db = DB::open(&opt, BLOCKS_FILE).unwrap();
 
-    let _ = db.put(
-        format!("{:?}", block.number.clone()).as_bytes(),
-        block.clone().enconde().as_slice(),
-    );
+    let block_number = block.clone().number;
 
-    let _ = db.put("latest", block.clone().enconde().as_slice());
+    if get_block_by_number(block_number.to_string().as_str()).is_some() {
+        println!("The block with number: {block_number:?} already exists, ignoring it");
+    } else {
+        let db = DB::open(&opt, BLOCKS_FILE).unwrap();
 
-    let _ = DB::destroy(&opt, BLOCKS_FILE);
+        let _ = db.put(
+            format!("{:?}", block.number.clone()).as_bytes(),
+            block.clone().enconde().as_slice(),
+        );
+
+        let _ = db.put("latest", block.clone().enconde().as_slice());
+
+        let _ = DB::destroy(&opt, BLOCKS_FILE);
+    }
 }
 
 pub fn get_blockchain_data() -> Vec<Block> {
