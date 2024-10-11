@@ -7,7 +7,7 @@ use bet_chain::miner;
 use bet_chain::models::{Block, TXPool};
 use bet_chain::p2p;
 use bet_chain::storage;
-use std::{thread, time};
+use std::thread;
 
 #[tokio::main]
 async fn main() {

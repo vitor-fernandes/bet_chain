@@ -8,8 +8,6 @@ static BLOCKS_FILE: &str = "./files/chain/blocks";
 static BALANCES_FILE: &str = "./files/chain/balances";
 static TRANSACTIONS_FILE: &str = "./files/chain/transactions";
 static NONCES_FILE: &str = "./files/chain/nonces";
-
-//static TXPOOL_FILE: &str = "./files/txpool.json";
 static TXPOOL_FILE: &str = "./files/chain/txpool";
 
 // Saving the Current State of the Blockchain
@@ -104,14 +102,6 @@ pub fn get_last_mined_block() -> Option<Block> {
 }
 
 pub fn save_txpool_data(txs: &Vec<Transaction>) {
-    // let mut file =
-    //     File::create(TXPOOL_FILE).expect("Error Opening txpool.json file in save_blockchain_data");
-
-    // let txpool_list_json = serde_json::to_string_pretty(tx).unwrap();
-
-    // file.write_all(txpool_list_json.as_bytes())
-    //     .expect("Error in writing to blockchain.json file");
-    // file.flush().expect("Error in Flushing");
     let mut opt = Options::default();
     opt.create_if_missing(true);
     let db = DB::open(&opt, TXPOOL_FILE).unwrap();
@@ -140,11 +130,6 @@ pub fn save_txpool_data(txs: &Vec<Transaction>) {
 }
 
 pub fn get_txpool_data() -> Vec<Transaction> {
-    // let file = File::open(TXPOOL_FILE).expect("Error Opening txpool.json in get_blockchain_data");
-
-    // let tmp_txpool = serde_json::from_reader(&file).unwrap_or(Vec::new());
-
-    // return tmp_txpool;
     let mut opt = Options::default();
 
     opt.create_if_missing(true);
