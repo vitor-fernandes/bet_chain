@@ -34,8 +34,9 @@ pub async fn create_new_block(previous_block: &Block) -> Block {
         );
     }
 
+    println!("{block:?}");
     // Cleaning the TXPool
-    storage::save_txpool_data(&Vec::<Transaction>::new());
+    //storage::save_txpool_data(&Vec::<Transaction>::new());
 
     // Storing the new block into the ledger
     storage::save_blockchain_data(&block);

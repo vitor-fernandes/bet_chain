@@ -1,6 +1,6 @@
 use crate::models::*;
 
-use rocksdb::{IteratorMode, Options, DB};
+use rocksdb::{IteratorMode, Options, WriteBatch, WriteOptions, DB};
 
 use serde_json;
 
@@ -117,11 +117,18 @@ pub fn save_txpool_data(txs: &Vec<Transaction>) {
     let db = DB::open(&opt, TXPOOL_FILE).unwrap();
 
     if txs.len() == 0 {
+        let mut batch = WriteBatch::default();
         let iter = db.iterator(IteratorMode::Start);
         for item in iter {
             let tmp_item = item.unwrap();
-            let _ = db.delete(tmp_item.0).unwrap();
+            batch.delete(tmp_item.0);
         }
+
+        let mut write_opts = WriteOptions::default();
+        write_opts.set_sync(false);
+        write_opts.disable_wal(true);
+
+        db.write_opt(batch, &write_opts).unwrap();
     } else {
         for i in 0..txs.len() {
             let tx: &Transaction = txs.get(i).unwrap();
@@ -139,16 +146,25 @@ pub fn get_txpool_data() -> Vec<Transaction> {
 
     // return tmp_txpool;
     let mut opt = Options::default();
+
     opt.create_if_missing(true);
     let db = DB::open(&opt, TXPOOL_FILE).unwrap();
 
     let mut txs: Vec<Transaction> = Vec::new();
 
+    let mut batch = WriteBatch::default();
+    let mut write_opts = WriteOptions::default();
+    write_opts.set_sync(false);
+    write_opts.disable_wal(true);
+
     for iter in db.iterator(IteratorMode::Start) {
-        let (_, value) = iter.unwrap();
-        let tx: Transaction = serde_json::from_slice(&value).unwrap();
+        let tmp_item = iter.unwrap();
+        let tx: Transaction = serde_json::from_slice(&tmp_item.1).unwrap();
         txs.push(tx);
+        batch.delete(tmp_item.0);
     }
+
+    db.write_opt(batch, &write_opts).unwrap();
 
     let _ = DB::destroy(&opt, TXPOOL_FILE);
 
