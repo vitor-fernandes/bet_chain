@@ -1,4 +1,4 @@
-use crate::models::*;
+use crate::models::{Block, Transaction};
 
 use rocksdb::{IteratorMode, Options, WriteBatch, WriteOptions, DB};
 
@@ -106,24 +106,9 @@ pub fn save_txpool_data(txs: &Vec<Transaction>) {
     opt.create_if_missing(true);
     let db = DB::open(&opt, TXPOOL_FILE).unwrap();
 
-    if txs.len() == 0 {
-        let mut batch = WriteBatch::default();
-        let iter = db.iterator(IteratorMode::Start);
-        for item in iter {
-            let tmp_item = item.unwrap();
-            batch.delete(tmp_item.0);
-        }
-
-        let mut write_opts = WriteOptions::default();
-        write_opts.set_sync(false);
-        write_opts.disable_wal(true);
-
-        db.write_opt(batch, &write_opts).unwrap();
-    } else {
-        for i in 0..txs.len() {
-            let tx: &Transaction = txs.get(i).unwrap();
-            let _ = db.put(i.to_be_bytes(), tx.enconde().as_slice());
-        }
+    for i in 0..txs.len() {
+        let tx: &Transaction = txs.get(i).unwrap();
+        let _ = db.put(i.to_be_bytes(), tx.enconde().as_slice());
     }
 
     let _ = DB::destroy(&opt, TXPOOL_FILE);

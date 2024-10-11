@@ -93,6 +93,14 @@ impl Transaction {
         return tx;
     }
 
+    // Helper to print and encode tx
+    pub fn to_string(&self) -> String {
+        return format!(
+            "from:{},to:{},amount:{},hash:{},timestamp:{}",
+            self.from_address, self.to_address, self.amount, self.hash, self.timestamp
+        );
+    }
+
     pub fn enconde(&self) -> Vec<u8> {
         return serde_json::to_vec(&self).unwrap();
     }
