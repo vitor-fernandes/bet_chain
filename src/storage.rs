@@ -3,15 +3,14 @@ use crate::models::*;
 use rocksdb::{IteratorMode, Options, DB};
 
 use serde_json;
-use std::fs::*;
-use std::io::Write;
 
 static BLOCKS_FILE: &str = "./files/chain/blocks";
 static BALANCES_FILE: &str = "./files/chain/balances";
 static TRANSACTIONS_FILE: &str = "./files/chain/transactions";
 static NONCES_FILE: &str = "./files/chain/nonces";
 
-static TXPOOL_FILE: &str = "./files/txpool.json";
+//static TXPOOL_FILE: &str = "./files/txpool.json";
+static TXPOOL_FILE: &str = "./files/chain/txpool";
 
 // Saving the Current State of the Blockchain
 pub fn save_blockchain_data(block: &Block) {
@@ -104,23 +103,56 @@ pub fn get_last_mined_block() -> Option<Block> {
     }
 }
 
-pub fn save_txpool_data(tx: &Vec<Transaction>) {
-    let mut file =
-        File::create(TXPOOL_FILE).expect("Error Opening txpool.json file in save_blockchain_data");
+pub fn save_txpool_data(txs: &Vec<Transaction>) {
+    // let mut file =
+    //     File::create(TXPOOL_FILE).expect("Error Opening txpool.json file in save_blockchain_data");
 
-    let txpool_list_json = serde_json::to_string_pretty(tx).unwrap();
+    // let txpool_list_json = serde_json::to_string_pretty(tx).unwrap();
 
-    file.write_all(txpool_list_json.as_bytes())
-        .expect("Error in writing to blockchain.json file");
-    file.flush().expect("Error in Flushing");
+    // file.write_all(txpool_list_json.as_bytes())
+    //     .expect("Error in writing to blockchain.json file");
+    // file.flush().expect("Error in Flushing");
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, TXPOOL_FILE).unwrap();
+
+    if txs.len() == 0 {
+        let iter = db.iterator(IteratorMode::Start);
+        for item in iter {
+            let tmp_item = item.unwrap();
+            let _ = db.delete(tmp_item.0).unwrap();
+        }
+    } else {
+        for i in 0..txs.len() {
+            let tx: &Transaction = txs.get(i).unwrap();
+            let _ = db.put(i.to_be_bytes(), tx.enconde().as_slice());
+        }
+    }
+
+    let _ = DB::destroy(&opt, TXPOOL_FILE);
 }
 
 pub fn get_txpool_data() -> Vec<Transaction> {
-    let file = File::open(TXPOOL_FILE).expect("Error Opening txpool.json in get_blockchain_data");
+    // let file = File::open(TXPOOL_FILE).expect("Error Opening txpool.json in get_blockchain_data");
 
-    let tmp_txpool = serde_json::from_reader(&file).unwrap_or(Vec::new());
+    // let tmp_txpool = serde_json::from_reader(&file).unwrap_or(Vec::new());
 
-    return tmp_txpool;
+    // return tmp_txpool;
+    let mut opt = Options::default();
+    opt.create_if_missing(true);
+    let db = DB::open(&opt, TXPOOL_FILE).unwrap();
+
+    let mut txs: Vec<Transaction> = Vec::new();
+
+    for iter in db.iterator(IteratorMode::Start) {
+        let (_, value) = iter.unwrap();
+        let tx: Transaction = serde_json::from_slice(&value).unwrap();
+        txs.push(tx);
+    }
+
+    let _ = DB::destroy(&opt, TXPOOL_FILE);
+
+    return txs;
 }
 
 pub fn get_balance_of(user: String) -> u64 {

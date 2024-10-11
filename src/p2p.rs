@@ -37,7 +37,7 @@ impl P2P {
     }
 
     pub fn insert_peer(&mut self, peer: String) {
-        if !self.get_peers().contains(&peer) && peer.ne("") {
+        if !self.is_peer(peer.clone()) && !peer.is_empty() {
             println!("Peer Added: {:?}", peer);
             self.peers.push(peer);
         }
